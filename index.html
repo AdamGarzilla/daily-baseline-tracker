@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Baseline">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Daily Baseline Tracker</title>
+<style>
+:root{
+ --bg:#f3f4f6;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#d1d5db;
+ --accent:#4338ca;--accent2:#312e81;--ok:#166534;--warn:#92400e;--bad:#991b1b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+ font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:10;background:#111827;color:#fff;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;box-shadow:0 3px 16px rgba(0,0,0,.18)}
+.wrap{max-width:850px;margin:auto}
+h1{font-size:20px;margin:0}.subtitle{font-size:12px;color:#cbd5e1;margin-top:3px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+nav button{border:0;border-radius:12px;padding:12px 8px;background:#374151;color:#fff;font-weight:800;font-size:15px}
+nav button.active{background:#fff;color:#111827}
+main{max-width:850px;margin:auto;padding:14px 12px 100px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 20px rgba(17,24,39,.07)}
+.card h2{margin:0 0 14px;font-size:18px}.card h3{font-size:15px;margin:18px 0 9px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:650px){.grid,.grid3{grid-template-columns:1fr}}
+label{font-size:13px;font-weight:800;display:block;margin-bottom:6px}
+input,select,textarea,button{font:inherit}
+input[type=date],input[type=time],input[type=number],input[type=text],select,textarea{
+ width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)
+}
+textarea{min-height:88px;resize:vertical}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:650px){.checks{grid-template-columns:1fr}}
+.check{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;font-weight:700;font-size:14px}
+.check input{width:22px;height:22px}
+.rating{margin-bottom:14px}
+.rating-title{font-size:14px;font-weight:800;margin-bottom:8px}
+.rating-buttons{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+.rating-buttons button{border:1px solid var(--line);background:#fff;border-radius:9px;min-height:38px;font-weight:800;color:#374151}
+.rating-buttons button.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+@media(max-width:520px){.rating-buttons{grid-template-columns:repeat(5,1fr)}}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.btn{border:0;border-radius:11px;padding:12px 14px;font-weight:850}
+.primary{background:var(--accent);color:#fff}.secondary{background:#e5e7eb;color:#111827}.danger{background:#fee2e2;color:var(--bad)}
+.status{margin-top:10px;min-height:18px;font-size:13px;font-weight:800;color:var(--ok)}
+.notice{border:2px solid #f59e0b;background:#fffbeb}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+.caf-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:10px}
+.caf-list{margin-top:12px}
+.caf-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;padding:9px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{border:1px solid #e5e7eb;border-radius:13px;padding:13px;text-align:center;background:#f9fafb}
+.stat b{font-size:22px;display:block}.stat span{font-size:11px;color:var(--muted)}
+.entry{border:1px solid #e5e7eb;border-radius:13px;padding:13px;margin:10px 0}
+.entry-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.entry small{color:var(--muted)}
+.pills{margin-top:7px}.pill{display:inline-block;margin:3px 4px 0 0;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:11px;font-weight:800}
+canvas{width:100%;height:250px;border:1px solid #e5e7eb;border-radius:13px;background:#fff}
+.install{display:none;background:#eef2ff;border:1px solid #c7d2fe}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <h1>Daily Baseline Tracker</h1>
+  <div class="subtitle" id="storageState">Private, local, offline-capable</div>
+  <nav>
+   <button class="active" data-view="today">Today</button>
+   <button data-view="history">History</button>
+   <button data-view="trends">Trends</button>
+  </nav>
+ </div>
+</header>
+
+<main>
+<section id="today" class="view active">
+ <div id="installCard" class="card install">
+  <h2>Install this app</h2>
+  <p class="hint" id="installText">Install it on your Home Screen for the full app experience.</p>
+  <div class="actions"><button id="installBtn" class="btn primary">Install app</button><button id="dismissInstall" class="btn secondary">Not now</button></div>
+ </div>
+
+ <div class="card">
+  <h2>Day</h2>
+  <div class="grid">
+   <div><label>Date</label><input id="date" type="date"></div>
+   <div><label>Morning check-in time</label><input id="morningTime" type="time"></div>
+  </div>
+ </div>
+
+ <div class="card">
+  <h2>Morning baseline</h2>
+  <div class="grid">
+   <div><label>Sleep hours</label><input id="sleepHours" type="number" min="0" max="16" step=".25" placeholder="7.5"></div>
+   <div id="sleepQualityRating"></div>
+  </div>
+
+  <h3>Medication consistency</h3>
+  <div class="checks">
+   <label class="check"><input id="currentTest" type="checkbox"> Current with testosterone</label>
+   <label class="check"><input id="currentAnastrozole" type="checkbox"> Current with anastrozole</label>
+   <label class="check"><input id="currentHcg" type="checkbox"> Current with HCG</label>
+   <label class="check"><input id="phentermine" type="checkbox"> Phentermine taken today</label>
+   <label class="check"><input id="otherMeds" type="checkbox"> Other planned medication(s) taken</label>
+   <label class="check"><input id="timingOnPlan" type="checkbox"> Medication timing matched plan</label>
+  </div>
+  <p class="hint">Consistency tracking only. Do not use this screen to change medication doses or schedules.</p>
+
+  <h3>How do I feel?</h3>
+  <div id="energyMorningRating"></div>
+  <div id="moodMorningRating"></div>
+  <div id="motivationMorningRating"></div>
+  <div class="actions"><button id="saveMorning" class="btn primary">Save morning check-in</button></div>
+  <div id="morningStatus" class="status"></div>
+ </div>
+
+ <div class="card">
+  <h2>Caffeine log</h2>
+  <div class="caf-row">
+   <div><label>Time</label><input id="caffeineTime" type="time"></div>
+   <div><label>Milligrams</label><input id="caffeineMg" type="number" inputmode="numeric" min="0" max="1000" step="5" placeholder="160"></div>
+   <button id="addCaffeine" class="btn secondary">Add</button>
+  </div>
+  <div id="caffeineList" class="caf-list hint">No caffeine entries yet.</div>
+  <div class="grid" style="margin-top:12px">
+   <div><label>Total caffeine</label><input id="caffeineTotal" type="number" readonly></div>
+   <div><label>Last caffeine time</label><input id="lastCaffeine" type="time" readonly></div>
+  </div>
+ </div>
+
+ <div class="card">
+  <h2>Mid-afternoon check-in</h2>
+  <div class="grid">
+   <div><label>Time</label><input id="afternoonTime" type="time" value="15:00"></div>
+   <div id="energyAfternoonRating"></div>
+  </div>
+  <label style="margin-top:12px">Short note</label>
+  <input id="afternoonNote" type="text" placeholder="Steady, foggy, focused, irritable...">
+  <div class="actions"><button id="saveAfternoon" class="btn primary">Save afternoon check-in</button></div>
+  <div id="afternoonStatus" class="status"></div>
+ </div>
+
+ <div class="card">
+  <h2>End-of-workday check-in</h2>
+  <div id="productivityRating"></div>
+  <div id="stressRating"></div>
+  <div id="confidenceRating"></div>
+  <div class="grid">
+   <div><label>Did I feel like myself?</label><select id="feltLikeSelf"><option>Yes</option><option selected>Somewhat</option><option>No</option></select></div>
+   <div><label>Water (cups)</label><input id="waterCups" type="number" min="0" max="40"></div>
+  </div>
+  <div class="checks" style="margin-top:12px">
+   <label class="check"><input id="exercise" type="checkbox"> Exercise</label>
+   <label class="check"><input id="walk" type="checkbox"> Walk</label>
+   <label class="check"><input id="ateAsPlanned" type="checkbox"> Ate roughly as planned</label>
+   <label class="check"><input id="illness" type="checkbox"> Sick or recovering</label>
+  </div>
+  <div class="grid" style="margin-top:12px">
+   <div><label>Biggest win</label><textarea id="biggestWin"></textarea></div>
+   <div><label>Where did today's choices make me more available to love someone?</label><textarea id="presenceNote"></textarea></div>
+  </div>
+  <label style="margin-top:12px">Other notes</label>
+  <textarea id="notes"></textarea>
+  <div class="actions"><button id="saveEvening" class="btn primary">Save end-of-day check-in</button></div>
+  <div id="eveningStatus" class="status"></div>
+ </div>
+</section>
+
+<section id="history" class="view">
+ <div class="card">
+  <h2>Saved days</h2>
+  <div id="historyList"></div>
+ </div>
+</section>
+
+<section id="trends" class="view">
+ <div class="card">
+  <h2>Recent snapshot</h2>
+  <div class="stats">
+   <div class="stat"><b id="daysTracked">0</b><span>days tracked</span></div>
+   <div class="stat"><b id="avgSleep">-</b><span>avg sleep hours</span></div>
+   <div class="stat"><b id="avgCaffeine">-</b><span>avg caffeine mg</span></div>
+   <div class="stat"><b id="medConsistency">-</b><span>timing on plan</span></div>
+  </div>
+ </div>
+ <div class="card"><h2>Energy and sleep</h2><canvas id="energyChart" width="900" height="320"></canvas></div>
+ <div class="card"><h2>Caffeine and stress</h2><canvas id="caffeineChart" width="900" height="320"></canvas></div>
+ <div class="card">
+  <h2>Backup and portability</h2>
+  <div class="actions">
+   <button id="exportJson" class="btn secondary">Export backup</button>
+   <button id="exportCsv" class="btn secondary">Export CSV</button>
+   <label class="btn secondary">Import backup<input id="importJson" type="file" accept=".json" hidden></label>
+  </div>
+  <p class="hint">Back up weekly during the first month, then monthly. Export before changing phones or clearing browser data.</p>
+ </div>
+</section>
+</main>
+<footer>Stored on this device. No account or cloud upload required.</footer>
+
+<script>
+const KEY='dailyBaselinePWA_v1';
+const $=id=>document.getElementById(id);
+let deferredPrompt=null;
+let caffeine=[];
+const ratings={};
+
+function localDate(){const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d-o).toISOString().slice(0,10)}
+function localTime(){return new Date().toTimeString().slice(0,5)}
+function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return {}}}
+function write(data){localStorage.setItem(KEY,JSON.stringify(data));$('storageState').textContent='Saved privately on this device'}
+function current(){return read()[$('date').value]||{date:$('date').value}}
+function merge(part){const data=read(),date=$('date').value;data[date]={...(data[date]||{date}),...part,date,updatedAt:new Date().toISOString()};write(data);return data[date]}
+function flash(id,msg){$(id).textContent='✓ '+msg;setTimeout(()=>$(id).textContent='',4000)}
+
+function rating(hostId,key,label,initial=5){
+ ratings[key]=initial;
+ const host=$(hostId);
+ host.className='rating';
+ host.innerHTML=`<div class="rating-title">${label}: <span id="${key}Value">${initial}</span>/10</div><div class="rating-buttons">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" data-key="${key}" data-value="${n}" class="${n===initial?'selected':''}">${n}</button>`).join('')}</div>`;
+ host.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  ratings[key]=Number(b.dataset.value);
+  host.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));
+  $(key+'Value').textContent=b.dataset.value;
+ });
+}
+function setRating(key,value){
+ ratings[key]=Number(value||5);
+ const host=document.querySelector(`[data-key="${key}"]`)?.closest('.rating');
+ if(!host)return;
+ host.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',Number(b.dataset.value)===ratings[key]));
+ $(key+'Value').textContent=ratings[key];
+}
+
+function saveMorning(){
+ merge({
+  morning:{time:$('morningTime').value,sleepHours:Number($('sleepHours').value||0),sleepQuality:ratings.sleepQuality,
+   meds:{currentTest:$('currentTest').checked,currentAnastrozole:$('currentAnastrozole').checked,currentHcg:$('currentHcg').checked,
+    phentermine:$('phentermine').checked,otherMeds:$('otherMeds').checked,timingOnPlan:$('timingOnPlan').checked},
+   energy:ratings.energyMorning,mood:ratings.moodMorning,motivation:ratings.motivationMorning},
+  caffeine:caffeine.slice()
+ });
+ flash('morningStatus','Morning check-in saved');
+ renderHistory();
+}
+function saveAfternoon(){
+ merge({afternoon:{time:$('afternoonTime').value,energy:ratings.energyAfternoon,note:$('afternoonNote').value},caffeine:caffeine.slice()});
+ flash('afternoonStatus','Afternoon check-in saved');renderHistory();
+}
+function saveEvening(){
+ merge({evening:{productivity:ratings.productivity,stress:ratings.stress,confidence:ratings.confidence,
+  feltLikeSelf:$('feltLikeSelf').value,waterCups:Number($('waterCups').value||0),exercise:$('exercise').checked,walk:$('walk').checked,
+  ateAsPlanned:$('ateAsPlanned').checked,illness:$('illness').checked,biggestWin:$('biggestWin').value,presenceNote:$('presenceNote').value,notes:$('notes').value},
+  caffeine:caffeine.slice()});
+ flash('eveningStatus','End-of-day check-in saved');renderHistory();
+}
+
+function addCaffeine(){
+ const time=$('caffeineTime').value,mg=Number($('caffeineMg').value||0);
+ if(!time||!mg){alert('Enter both the time and milligrams.');return}
+ caffeine.push({time,mg});caffeine.sort((a,b)=>a.time.localeCompare(b.time));
+ $('caffeineTime').value='';$('caffeineMg').value='';renderCaffeine();
+}
+function renderCaffeine(){
+ const list=$('caffeineList');
+ if(!caffeine.length)list.innerHTML='No caffeine entries yet.';
+ else list.innerHTML=caffeine.map((c,i)=>`<div class="caf-item"><span>${c.time} — ${c.mg} mg</span><button class="btn danger" onclick="removeCaffeine(${i})">Remove</button></div>`).join('');
+ $('caffeineTotal').value=caffeine.reduce((a,b)=>a+b.mg,0)||'';
+ $('lastCaffeine').value=caffeine.length?caffeine[caffeine.length-1].time:'';
+}
+window.removeCaffeine=i=>{caffeine.splice(i,1);renderCaffeine()}
+
+function loadDay(date){
+ const e=read()[date];$('date').value=date;
+ if(!e){clearVisible();return}
+ const m=e.morning||{},meds=m.meds||{};
+ $('morningTime').value=m.time||'';$('sleepHours').value=m.sleepHours||'';
+ setRating('sleepQuality',m.sleepQuality);setRating('energyMorning',m.energy);setRating('moodMorning',m.mood);setRating('motivationMorning',m.motivation);
+ ['currentTest','currentAnastrozole','currentHcg','phentermine','otherMeds','timingOnPlan'].forEach(k=>$(k).checked=!!meds[k]);
+ caffeine=Array.isArray(e.caffeine)?e.caffeine.slice():[];renderCaffeine();
+ const a=e.afternoon||{};$('afternoonTime').value=a.time||'15:00';setRating('energyAfternoon',a.energy);$('afternoonNote').value=a.note||'';
+ const v=e.evening||{};setRating('productivity',v.productivity);setRating('stress',v.stress);setRating('confidence',v.confidence);
+ $('feltLikeSelf').value=v.feltLikeSelf||'Somewhat';$('waterCups').value=v.waterCups||'';
+ ['exercise','walk','ateAsPlanned','illness'].forEach(k=>$(k).checked=!!v[k]);
+ $('biggestWin').value=v.biggestWin||'';$('presenceNote').value=v.presenceNote||'';$('notes').value=v.notes||'';
+}
+function clearVisible(){
+ $('morningTime').value=localTime();$('sleepHours').value='';
+ ['currentTest','currentAnastrozole','currentHcg','phentermine','otherMeds','timingOnPlan','exercise','walk','ateAsPlanned','illness'].forEach(k=>$(k).checked=false);
+ Object.keys(ratings).forEach(k=>setRating(k,5));caffeine=[];renderCaffeine();
+ $('afternoonTime').value='15:00';$('afternoonNote').value='';$('feltLikeSelf').value='Somewhat';$('waterCups').value='';
+ $('biggestWin').value='';$('presenceNote').value='';$('notes').value='';
+}
+
+function renderHistory(){
+ const box=$('historyList'),data=read(),days=Object.values(data).sort((a,b)=>b.date.localeCompare(a.date));
+ if(!days.length){box.innerHTML='<p class="hint">No saved days yet.</p>';return}
+ box.innerHTML=days.map(e=>{
+  const m=e.morning||{},a=e.afternoon||{},v=e.evening||{};
+  const caf=(e.caffeine||[]).reduce((s,x)=>s+Number(x.mg||0),0);
+  return `<div class="entry"><div class="entry-head"><div><b>${e.date}</b><br><small>Sleep ${m.sleepHours||'-'}h · AM energy ${m.energy||'-'} · Caffeine ${caf}mg</small></div><div><button class="btn secondary" onclick="openDay('${e.date}')">Open</button> <button class="btn danger" onclick="deleteDay('${e.date}')">Delete</button></div></div><div class="pills"><span class="pill">Afternoon ${a.energy||'-'}</span><span class="pill">Stress ${v.stress||'-'}</span><span class="pill">Productivity ${v.productivity||'-'}</span></div></div>`;
+ }).join('');
+}
+window.openDay=date=>{switchView('today');loadDay(date)}
+window.deleteDay=date=>{if(confirm(`Delete ${date}?`)){const d=read();delete d[date];write(d);renderHistory();renderTrends()}}
+
+function switchView(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ if(id==='history')renderHistory();if(id==='trends')renderTrends();window.scrollTo({top:0,behavior:'smooth'});
+}
+function avg(xs){const a=xs.filter(x=>Number.isFinite(x)&&x>0);return a.length?a.reduce((s,x)=>s+x,0)/a.length:0}
+function renderTrends(){
+ const es=Object.values(read()).sort((a,b)=>a.date.localeCompare(b.date)).slice(-30);
+ $('daysTracked').textContent=es.length;
+ $('avgSleep').textContent=es.length?avg(es.map(e=>e.morning?.sleepHours||0)).toFixed(1):'-';
+ $('avgCaffeine').textContent=es.length?Math.round(avg(es.map(e=>(e.caffeine||[]).reduce((s,x)=>s+Number(x.mg||0),0)))):'-';
+ const med=es.filter(e=>e.morning?.meds);$('medConsistency').textContent=med.length?Math.round(med.filter(e=>e.morning.meds.timingOnPlan).length/med.length*100)+'%':'-';
+ draw($('energyChart'),es,[{label:'AM energy',get:e=>e.morning?.energy||0,max:10},{label:'PM energy',get:e=>e.afternoon?.energy||0,max:10},{label:'Sleep',get:e=>e.morning?.sleepHours||0,max:10}]);
+ const maxC=Math.max(300,...es.map(e=>(e.caffeine||[]).reduce((s,x)=>s+Number(x.mg||0),0)));
+ draw($('caffeineChart'),es,[{label:'Caffeine mg',get:e=>(e.caffeine||[]).reduce((s,x)=>s+Number(x.mg||0),0),max:maxC},{label:'Stress ×30',get:e=>(e.evening?.stress||0)*30,max:300}]);
+}
+function draw(canvas,es,series){
+ const c=canvas.getContext('2d'),W=canvas.width,H=canvas.height,p={l:48,r:18,t:30,b:45};c.clearRect(0,0,W,H);c.font='12px system-ui';
+ c.strokeStyle='#e5e7eb';for(let i=0;i<=5;i++){let y=p.t+(H-p.t-p.b)*i/5;c.beginPath();c.moveTo(p.l,y);c.lineTo(W-p.r,y);c.stroke()}
+ if(!es.length){c.fillStyle='#6b7280';c.fillText('No saved data yet',p.l+20,H/2);return}
+ const colors=['#4338ca','#059669','#d97706'];
+ series.forEach((s,j)=>{c.strokeStyle=colors[j];c.lineWidth=3;c.beginPath();es.forEach((e,i)=>{let x=p.l+(es.length===1?0:(W-p.l-p.r)*i/(es.length-1)),y=H-p.b-(s.get(e)/s.max)*(H-p.t-p.b);i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();c.fillStyle=colors[j];c.fillText(s.label,p.l+j*180,p.t-10)});
+ c.fillStyle='#6b7280';const step=Math.max(1,Math.ceil(es.length/6));es.forEach((e,i)=>{if(i%step===0||i===es.length-1){let x=p.l+(es.length===1?0:(W-p.l-p.r)*i/(es.length-1));c.save();c.translate(x,H-p.b+16);c.rotate(-.35);c.fillText(e.date.slice(5),0,0);c.restore()}});
+}
+
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function exportJSON(){download('daily-baseline-backup.json',JSON.stringify(read(),null,2),'application/json')}
+function exportCSV(){
+ const rows=[['date','sleepHours','sleepQuality','energyMorning','moodMorning','motivationMorning','caffeineMg','energyAfternoon','productivity','stress','confidence','feltLikeSelf','presenceNote']];
+ Object.values(read()).sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>rows.push([e.date,e.morning?.sleepHours||'',e.morning?.sleepQuality||'',e.morning?.energy||'',e.morning?.mood||'',e.morning?.motivation||'',(e.caffeine||[]).reduce((s,x)=>s+Number(x.mg||0),0),e.afternoon?.energy||'',e.evening?.productivity||'',e.evening?.stress||'',e.evening?.confidence||'',e.evening?.feltLikeSelf||'',e.evening?.presenceNote||'']));
+ download('daily-baseline.csv',rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),'text/csv');
+}
+function importJSON(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(confirm('Replace current data with this backup?')){write(d);renderHistory();renderTrends();alert('Backup imported')}}catch{alert('Invalid backup file')}};r.readAsText(f);ev.target.value=''}
+
+function initInstall(){
+ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installCard').style.display='block'});
+ $('installBtn').onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installCard').style.display='none'}else{alert('On iPhone: open in Safari, tap Share, then Add to Home Screen.')}};
+ $('dismissInstall').onclick=()=>$('installCard').style.display='none';
+ if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.navigator.standalone){$('installCard').style.display='block';$('installText').textContent='On iPhone: open this site in Safari, tap Share, then Add to Home Screen.'}
+}
+function init(){
+ rating('sleepQualityRating','sleepQuality','Sleep quality');
+ rating('energyMorningRating','energyMorning','Energy');
+ rating('moodMorningRating','moodMorning','Mood');
+ rating('motivationMorningRating','motivationMorning','Motivation');
+ rating('energyAfternoonRating','energyAfternoon','Afternoon energy');
+ rating('productivityRating','productivity','Productivity');
+ rating('stressRating','stress','Stress');
+ rating('confidenceRating','confidence','Confidence / optimism');
+ $('date').value=localDate();$('morningTime').value=localTime();
+ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+ $('date').onchange=()=>loadDay($('date').value);
+ $('saveMorning').onclick=saveMorning;$('saveAfternoon').onclick=saveAfternoon;$('saveEvening').onclick=saveEvening;
+ $('addCaffeine').onclick=addCaffeine;$('exportJson').onclick=exportJSON;$('exportCsv').onclick=exportCSV;$('importJson').onchange=importJSON;
+ loadDay(localDate());renderHistory();renderTrends();initInstall();
+ if('serviceWorker' in navigator)navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+}
+init();
+</script>
+</body>
+</html>
